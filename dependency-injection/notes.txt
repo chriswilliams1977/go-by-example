@@ -1,0 +1,61 @@
+//old way server builds its own config (tightly coupled)
+//if need to update buildMyConfigSomehow to buildMyConfigSomehow(arg) = update all building code
+//also difficult to mock
+
+type Server struct {
+	config *Config
+}
+
+func New() *Server {
+	return &Server{
+		config: buildMyConfigSomehow(),
+	}
+}
+
+func main() {
+
+}
+
+
+//DI way
+//decouples config creation from server
+//You can use what ever logic to create config
+//if Config is an interface, this gives us an easy route to mocking.
+//We can pass anything we want into New as long as it implements our interface
+//A DI framework generally builds a graph based on the “providers” you tell it about and determines how to build your objects.
+
+type Server struct {
+	config *Config
+  }
+
+  //get config from supplied Config pointer
+  func New(config *Config) *Server {
+	return &Server{
+	  config: config,
+	}
+  }
+
+
+//Old way to set up main
+// as our application becomes more complicated, our main will continue to grow in complexity.
+//Every time we add a new dependency to any of our components,
+//we’ll have to reflect that dependency with ordering and logic in the main function to build that component.
+
+func main() {
+	//create our Config
+	config := NewConfig()
+	//create our database connection
+	db, err := ConnectDatabase(config)
+
+	if err != nil {
+	  panic(err)
+	}
+
+	//create our PersonRepository which allows us to create our PersonService
+	personRepository := NewPersonRepository(db)
+	personService := NewPersonService(config, personRepository)
+
+	//create our Server and run it
+	server := NewServer(config, personService)
+	server.Run()
+  }
